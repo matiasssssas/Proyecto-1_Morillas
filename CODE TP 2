@@ -1,0 +1,72 @@
+#define LED_R 9
+#define LED_G 10
+#define LED_B 11
+#define BUZZER 8
+#define BOTON 7
+#define POT_R A0
+#define POT_G A1
+#define POT_B A2
+#define POT_TIEMPO A3
+
+bool estadoSecuencia = true; 
+void setup() {
+  pinMode(LED_R, OUTPUT);
+  pinMode(LED_G, OUTPUT);
+  pinMode(LED_B, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(BOTON, INPUT_PULLUP); 
+  Serial.begin(9600);
+}
+
+void loop() {
+  
+  if (digitalRead(BOTON) == LOW) {
+    estadoSecuencia = !estadoSecuencia; 
+    delay(300); 
+  }
+
+  if (estadoSecuencia) {
+    
+    int r = analogRead(POT_R);
+    int g = analogRead(POT_G);
+    int b = analogRead(POT_B);
+
+    r = (r * 255) / 1023;  
+    g = (g * 255) / 1023;
+    b = (b * 255) / 1023;
+
+    
+    int tiempo = analogRead(POT_TIEMPO);
+    tiempo = map(tiempo, 0, 1023, 0, 3000);
+
+    
+    Serial.print("Tiempo: ");
+    Serial.print(tiempo / 1000.0); 
+    Serial.println(" s");
+    Serial.print("R:");
+    Serial.println(r);
+    Serial.print("G:");
+    Serial.println(g);
+    Serial.print("B:");
+    Serial.println(b);
+
+    
+    analogWrite(LED_R, r);
+    analogWrite(LED_G, g);
+    analogWrite(LED_B, b);
+
+    
+    analogWrite(BUZZER, 200);
+    delay(100);
+    analogWrite(BUZZER, 0);
+
+    
+    delay(tiempo);
+
+    
+    analogWrite(LED_R, 0);
+    analogWrite(LED_G, 0);
+    analogWrite(LED_B, 0);
+    delay(100); 
+  }
+}
