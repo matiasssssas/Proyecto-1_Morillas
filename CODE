@@ -1,0 +1,118 @@
+#include <Adafruit_LiquidCrystal.h>
+
+LiquidCrystal LCD(13, 11, 10, 12, 6, 8);
+
+int sensorluz = A0;
+int sensortemp = A1;
+int sensormo = 5;
+int buzzer = 9;
+
+int ledrojo = 1;
+int ledazul = 3;
+int ledverde = 4;
+
+int trigpin = 7;
+int echopin = 2;
+
+void setup()
+{
+  pinMode(sensorluz, INPUT);
+  pinMode(sensortemp, INPUT);
+  pinMode(sensormo, INPUT);
+  pinMode(echopin, INPUT);
+  pinMode(trigpin, OUTPUT);
+  pinMode(ledrojo, OUTPUT);
+  pinMode(ledazul, OUTPUT);
+  pinMode(ledverde, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+
+  LCD.begin(16 , 2);
+  LCD.setCursor(0 , 0);
+  
+  Serial.begin(9600);
+}
+
+void loop()
+{  
+  int valorluz = analogRead(sensorluz);
+  int porcentajeluz = map(valorluz, 1023, 552, 0, 100);
+  
+  float voltaje = analogRead(sensortemp) * 5.0 / 1024.0;
+  float temperatura = (voltaje - 0.5) * 100;
+
+  int valormo = digitalRead(sensormo);
+  
+  long duracion;
+  float distancia;
+  digitalWrite(trigpin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigpin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigpin, LOW);
+  duracion = pulseIn(echopin, HIGH);
+  distancia = duracion * 0.034 / 2;
+  
+  bool noche = porcentajeluz < 20;
+  
+  LCD.setCursor(0 , 0);
+  LCD.print("Luz:");
+  LCD.print(porcentajeluz);
+  LCD.print("% M:");
+  LCD.print(valormo);
+  
+  LCD.setCursor(0, 1);
+  LCD.print("T:");
+  LCD.print(temperatura);
+  LCD.print("C D:");
+  LCD.print(distancia);
+  
+  Serial.print("Luz: ");
+  Serial.print(porcentajeluz);
+  Serial.print("% | Temp: ");
+  Serial.print(temperatura);
+  Serial.print("C | Mov: ");
+  Serial.print(valormo);
+  Serial.print(" | Dist: ");
+  Serial.println(distancia);
+  
+  digitalWrite(ledrojo, LOW);
+  digitalWrite(ledazul, LOW);
+  digitalWrite(ledverde, LOW);
+  digitalWrite(buzzer, LOW);
+    
+  if (noche == false) {
+    if (temperatura > 39 || valormo == HIGH){
+      digitalWrite(ledrojo, HIGH);
+      digitalWrite(ledverde, HIGH);
+      digitalWrite(buzzer, HIGH);
+      delay(200);
+      Serial.println("ALERTA: Movimiento o calor detectado durante el día.");
+    }
+    if (distancia < 100.0) {
+      digitalWrite(ledrojo, HIGH);
+      digitalWrite(ledverde, LOW);
+      tone(buzzer, 1500);
+      delay(500);
+      Serial.println("ALERTA: Persona demasiado cerca durante el día.");
+    }
+  }
+
+  if (noche == true) {
+    if (temperatura > 39){
+      digitalWrite(ledrojo, HIGH);
+      digitalWrite(ledverde, LOW);
+      digitalWrite(ledazul, LOW);
+      digitalWrite(buzzer, HIGH);
+      delay(1000);
+      Serial.println("ALARMA NOCTURNA!! Alta temperatura.");
+    }
+    if (valormo == HIGH){
+      digitalWrite(ledrojo, HIGH);
+      digitalWrite(ledverde, HIGH);
+      digitalWrite(ledazul, LOW);
+      digitalWrite(buzzer, HIGH);
+      delay(1000);
+      Serial.println("ALARMA NOCTURNA!! Movimiento detectado.");
+    }
+  }
+}
